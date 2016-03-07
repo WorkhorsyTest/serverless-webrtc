@@ -62,10 +62,6 @@ $('#createBtn').click(function () {
 })
 
 $('#joinBtn').click(function () {
-  navigator.getUserMedia = navigator.getUserMedia ||
-                           navigator.webkitGetUserMedia ||
-                           navigator.mozGetUserMedia ||
-                           navigator.msGetUserMedia
   navigator.getUserMedia({video: true, audio: true}, function (stream) {
     var video = document.getElementById('localVideo')
     video.src = window.URL.createObjectURL(stream)
@@ -224,10 +220,7 @@ function setupDC1 () {
 
 function createLocalOffer () {
   console.log('video1')
-  navigator.getUserMedia = navigator.getUserMedia ||
-                           navigator.webkitGetUserMedia ||
-                           navigator.mozGetUserMedia ||
-                           navigator.msGetUserMedia
+
   navigator.getUserMedia({video: true, audio: true}, function (stream) {
     var video = document.getElementById('localVideo')
     video.src = window.URL.createObjectURL(stream)

@@ -1,36 +1,24 @@
-var RTCPeerConnection = null
-var getUserMedia = null
 var attachMediaStream = null
 var reattachMediaStream = null
-var webrtcDetectedBrowser = null
+var webrtcIsFirefox = false;
+
+navigator.getUserMedia = navigator.getUserMedia ||
+                         navigator.mozGetUserMedia ||
+                         navigator.webkitGetUserMedia ||
+                         navigator.msGetUserMedia
 
 if (navigator.mozGetUserMedia) {
   console.log('This appears to be Firefox')
 
-  webrtcDetectedBrowser = 'firefox'
-
-  // The RTCPeerConnection object.
-  RTCPeerConnection = mozRTCPeerConnection
-
-  // The RTCSessionDescription object.
-  RTCSessionDescription = mozRTCSessionDescription
-
-  // The RTCIceCandidate object.
-  RTCIceCandidate = mozRTCIceCandidate
-
-  // Get UserMedia (only difference is the prefix).
-  // Code from Adam Barth.
-  getUserMedia = navigator.mozGetUserMedia.bind(navigator)
+  webrtcIsFirefox = true;
 
   // Attach a media stream to an element.
   attachMediaStream = function (element, stream) {
-    console.log('Attaching media stream')
     element.mozSrcObject = stream
     element.play()
   }
 
   reattachMediaStream = function (to, from) {
-    console.log('Reattaching media stream')
     to.mozSrcObject = from.mozSrcObject
     to.play()
   }
@@ -46,18 +34,12 @@ if (navigator.mozGetUserMedia) {
 } else if (navigator.webkitGetUserMedia) {
   console.log('This appears to be Chrome')
 
-  webrtcDetectedBrowser = 'chrome'
-
   // The RTCPeerConnection object.
   RTCPeerConnection = webkitRTCPeerConnection
 
-  // Get UserMedia (only difference is the prefix).
-  // Code from Adam Barth.
-  getUserMedia = navigator.webkitGetUserMedia.bind(navigator)
-
   // Attach a media stream to an element.
   attachMediaStream = function (element, stream) {
-    element.src = webkitURL.createObjectURL(stream)
+    element.src = URL.createObjectURL(stream)
   }
 
   reattachMediaStream = function (to, from) {
@@ -85,5 +67,5 @@ if (navigator.mozGetUserMedia) {
     }
   }
 } else {
-  console.log('Browser does not appear to be WebRTC-capable')
+  console.error('Browser does not appear to be WebRTC-capable')
 }

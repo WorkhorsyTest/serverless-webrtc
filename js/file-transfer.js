@@ -3,7 +3,7 @@
  */
 /* For documentation and examples: http://bit.ly/RTCDataConnection */
 
-window.moz = !! navigator.mozGetUserMedia
+window.moz = webrtcIsFirefox;
 
 var RTCMultiSession = function (options) {
   return {
@@ -156,6 +156,6 @@ var FileSaver = {
 
     save.dispatchEvent(evt)
 
-    ;(window.URL || window.webkitURL).revokeObjectURL(save.href)
+    ;URL.revokeObjectURL(save.href)
   }
 }
