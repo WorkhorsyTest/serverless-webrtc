@@ -18,6 +18,26 @@ var pc1 = new RTCPeerConnection(cfg, con),
 var activedc
 
 var pc1icedone = false
+var g_offer = null;
+
+function httpGetJSON(url, cb, timeout) {
+	timeout = timeout || 3000;
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if (this.readyState === 4) {
+			cb(this.response, this.status);
+		} else if (this.readyState === 0) {
+			cb(null);
+		}
+	};
+	xhr.onerror = function() {
+		cb(null);
+	};
+	xhr.open('GET', url, true);
+	xhr.responseType = 'json';
+	xhr.timeout = timeout;
+	xhr.send(null);
+}
 
 var sdpConstraints = {
   optional: [],
@@ -51,10 +71,40 @@ $('#joinBtn').click(function () {
     console.log('Error adding stream to pc2: ' + error)
   })
   $('#getRemoteOffer').modal('show')
+    httpGetJSON('http://localhost:8888/get_offers.json', function(response, status) {
+        if (status === 200) {
+            console.info(response);
+			var offer = response;
+			offer = decodeURIComponent(offer);
+			//console.info(offer);
+			offer = atob(offer);
+			//console.info(offer);
+			offer = JSON.parse(offer);
+			//console.info(offer);
+            $('#remoteOffer').val(JSON.stringify(offer));
+            g_offer = offer;
+        } else {
+            console.error('offer failed .....');
+        }
+    });
 })
 
 $('#offerSentBtn').click(function () {
   $('#getRemoteAnswer').modal('show')
+    var offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
+    httpGetJSON('http://localhost:8888/get_answer.json?offer=' + offer, function(response, status) {
+        if (status === 200) {
+            var answer = response;
+			answer = decodeURIComponent(answer);
+			answer = atob(answer);
+			answer = JSON.parse(answer);
+            g_answer = answer;
+            console.info(answer);
+            $('#remoteAnswer').val(JSON.stringify(answer));
+        } else {
+            console.error('offer failed .....');
+        }
+    });
 })
 
 $('#offerRecdBtn').click(function () {
@@ -68,6 +118,22 @@ $('#offerRecdBtn').click(function () {
 
 $('#answerSentBtn').click(function () {
   $('#waitForConnection').modal('show')
+    var answer = $('#localAnswer').val();
+    answer = JSON.parse(answer);
+    console.info(answer);
+    console.info(g_offer);
+
+    answer = encodeURIComponent(btoa(JSON.stringify(answer)));
+    var offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
+    console.info(answer);
+    console.info(offer);
+    httpGetJSON('http://localhost:8888/set_answer.json?answer=' + answer + '&offer=' + offer, function(response, status) {
+        if (status === 200) {
+            console.info(response);
+        } else {
+            console.error('answer failed .....');
+        }
+    });
 })
 
 $('#answerRecdBtn').click(function () {
@@ -180,7 +246,22 @@ function createLocalOffer () {
 pc1.onicecandidate = function (e) {
   console.log('ICE candidate (pc1)', e)
   if (e.candidate == null) {
-    $('#localOffer').html(JSON.stringify(pc1.localDescription))
+    $('#localOffer').html(JSON.stringify(pc1.localDescription));
+    //console.info(JSON.stringify(pc1.localDescription));
+    //console.info(btoa(JSON.stringify(pc1.localDescription)));
+    g_offer = pc1.localDescription;
+    var offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
+    //console.info(offer);
+    //console.info(decodeURIComponent(offer));
+    //console.info(atob(decodeURIComponent(offer)));
+    //console.info(JSON.parse(atob(decodeURIComponent(offer))));
+    httpGetJSON('http://localhost:8888/set_offer.json?offer=' + offer, function(response, status) {
+        if (status === 200) {
+            console.info(response);
+        } else {
+            console.error('offer failed with status: ' + status);
+        }
+    });
   }
 }
 
