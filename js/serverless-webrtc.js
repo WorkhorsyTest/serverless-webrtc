@@ -5,6 +5,10 @@
     https://webrtc-demos.appspot.com/html/pc1.html
 */
 
+
+
+var httpServer = 'http://' + document.URL.split('://')[1].split(':')[0] + ':8888';
+console.info(httpServer);
 var cfg = {'iceServers': [{'url': 'stun:23.21.150.121'}]},
   con = { 'optional': [{'DtlsSrtpKeyAgreement': true}] }
 
@@ -71,7 +75,7 @@ $('#joinBtn').click(function () {
     console.log('Error adding stream to pc2: ' + error)
   })
   $('#getRemoteOffer').modal('show')
-    httpGetJSON('http://localhost:8888/get_offers.json', function(response, status) {
+    httpGetJSON(httpServer + '/get_offers.json', function(response, status) {
         if (status === 200) {
             console.info(response);
 			var offer = response;
@@ -92,7 +96,7 @@ $('#joinBtn').click(function () {
 $('#offerSentBtn').click(function () {
   $('#getRemoteAnswer').modal('show')
     var offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
-    httpGetJSON('http://localhost:8888/get_answer.json?offer=' + offer, function(response, status) {
+    httpGetJSON(httpServer + '/get_answer.json?offer=' + offer, function(response, status) {
         if (status === 200) {
             var answer = response;
 			answer = decodeURIComponent(answer);
@@ -127,7 +131,7 @@ $('#answerSentBtn').click(function () {
     var offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
     console.info(answer);
     console.info(offer);
-    httpGetJSON('http://localhost:8888/set_answer.json?answer=' + answer + '&offer=' + offer, function(response, status) {
+    httpGetJSON(httpServer + '/set_answer.json?answer=' + answer + '&offer=' + offer, function(response, status) {
         if (status === 200) {
             console.info(response);
         } else {
@@ -255,7 +259,7 @@ pc1.onicecandidate = function (e) {
     //console.info(decodeURIComponent(offer));
     //console.info(atob(decodeURIComponent(offer)));
     //console.info(JSON.parse(atob(decodeURIComponent(offer))));
-    httpGetJSON('http://localhost:8888/set_offer.json?offer=' + offer, function(response, status) {
+    httpGetJSON(httpServer + '/set_offer.json?offer=' + offer, function(response, status) {
         if (status === 200) {
             console.info(response);
         } else {
