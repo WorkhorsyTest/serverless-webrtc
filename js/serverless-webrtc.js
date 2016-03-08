@@ -76,13 +76,7 @@ $('#joinBtn').click(function () {
     httpGetJSON(httpServer + '/get_offers.json', function(response, status) {
         if (status === 200) {
             console.info(response);
-			var offer = response;
-			offer = decodeURIComponent(offer);
-			//console.info(offer);
-			offer = atob(offer);
-			//console.info(offer);
-			offer = JSON.parse(offer);
-			//console.info(offer);
+            var offer = JSON.parse(atob(decodeURIComponent(response)));
             $('#remoteOffer').val(JSON.stringify(offer));
             $('#offerRecdBtn').attr('disabled', false);
             g_offer = offer;
@@ -97,10 +91,7 @@ $('#offerSentBtn').click(function () {
     var offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
     httpGetJSON(httpServer + '/get_answer.json?offer=' + offer, function(response, status) {
         if (status === 200) {
-            var answer = response;
-			answer = decodeURIComponent(answer);
-			answer = atob(answer);
-			answer = JSON.parse(answer);
+            var answer = JSON.parse(atob(decodeURIComponent(response)));
             g_answer = answer;
             console.info(answer);
             $('#remoteAnswer').val(JSON.stringify(answer));
@@ -249,14 +240,8 @@ pc1.onicecandidate = function (e) {
   if (e.candidate == null) {
     $('#localOffer').html(JSON.stringify(pc1.localDescription));
     $('#offerSentBtn').attr('disabled', false);
-    //console.info(JSON.stringify(pc1.localDescription));
-    //console.info(btoa(JSON.stringify(pc1.localDescription)));
     g_offer = pc1.localDescription;
     var offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
-    //console.info(offer);
-    //console.info(decodeURIComponent(offer));
-    //console.info(atob(decodeURIComponent(offer)));
-    //console.info(JSON.parse(atob(decodeURIComponent(offer))));
     httpGetJSON(httpServer + '/set_offer.json?offer=' + offer, function(response, status) {
         if (status === 200) {
             console.info(response);
