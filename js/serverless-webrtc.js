@@ -55,6 +55,8 @@ $('#showLocalOffer').modal('hide')
 $('#getRemoteAnswer').modal('hide')
 $('#waitForConnection').modal('hide')
 $('#createOrJoin').modal('show')
+$('#createBtn').attr('disabled', false);
+$('#joinBtn').attr('disabled', false);
 
 $('#createBtn').click(function () {
   $('#showLocalOffer').modal('show')
@@ -82,6 +84,7 @@ $('#joinBtn').click(function () {
 			offer = JSON.parse(offer);
 			//console.info(offer);
             $('#remoteOffer').val(JSON.stringify(offer));
+            $('#offerRecdBtn').attr('disabled', false);
             g_offer = offer;
         } else {
             console.error('offer failed .....');
@@ -101,6 +104,7 @@ $('#offerSentBtn').click(function () {
             g_answer = answer;
             console.info(answer);
             $('#remoteAnswer').val(JSON.stringify(answer));
+            $('#answerRecdBtn').attr('disabled', false);
         } else {
             console.error('offer failed .....');
         }
@@ -244,6 +248,7 @@ pc1.onicecandidate = function (e) {
   console.log('ICE candidate (pc1)', e)
   if (e.candidate == null) {
     $('#localOffer').html(JSON.stringify(pc1.localDescription));
+    $('#offerSentBtn').attr('disabled', false);
     //console.info(JSON.stringify(pc1.localDescription));
     //console.info(btoa(JSON.stringify(pc1.localDescription)));
     g_offer = pc1.localDescription;
@@ -361,6 +366,7 @@ pc2.onicecandidate = function (e) {
   console.log('ICE candidate (pc2)', e)
   if (e.candidate == null) {
     $('#localAnswer').html(JSON.stringify(pc2.localDescription))
+    $('#answerSentBtn').attr('disabled', false);
   }
 }
 
