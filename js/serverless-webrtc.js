@@ -1,18 +1,163 @@
-/* See also:
-    http://www.html5rocks.com/en/tutorials/webrtc/basics/
-    https://code.google.com/p/webrtc-samples/source/browse/trunk/apprtc/index.html
-
-    https://webrtc-demos.appspot.com/html/pc1.html
-*/
 
 
 
+
+function httpGetJSON(url, cb, timeout) {
+	timeout = timeout || 3000;
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function() {
+		if (this.readyState === 4) {
+			cb(this.response, this.status);
+		} else if (this.readyState === 0) {
+			cb(null);
+		}
+	};
+	xhr.onerror = function() {
+		cb(null);
+	};
+	xhr.open('GET', url, true);
+	xhr.responseType = 'json';
+	xhr.timeout = timeout;
+	xhr.send(null);
+}
+
+
+var httpServer = 'http://' + document.URL.split('://')[1].split(':')[0] + ':8888';
+console.info(httpServer);
+
+var cfg = {'iceServers': [{'url': 'stun:23.21.150.121'}]};
+var con = { 'optional': [{'DtlsSrtpKeyAgreement': true}, {'RtpDataChannels': true }] };
+
+var pc1 = new RTCPeerConnection(cfg, con);
+var dc1 = null;
+
+function error(err) {
+  console.info(err);
+}
+
+function processIce(iceCandidate){
+  peerConnection.addIceCandidate(new RTCIceCandidate(iceCandidate));
+}
+
+function processAnswer(answer){
+  peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+  console.log("------ PROCESSED ANSWER ------");
+};
+
+
+var g_offer = null;
+var g_answer = null;
+
+
+$('#sendMessage').click(function(e) {
+  dc1.send('asssssssssssssssss');
+});
+
+$('#setOffer').click(function () {
+  pc1.onicecandidate = function(e) {
+      if (!pc1 || !e || !e.candidate) return;
+      console.info(e.candidate);
+      //sendNegotiation("candidate", event.candidate);
+  };
+
+  dc1 = pc1.createDataChannel("my channel");
+
+  dc1.onmessage = function (event) {
+    console.log("received: " + event.data);
+  };
+
+  dc1.onopen = function () {
+    console.log("datachannel open");
+  };
+
+  dc1.onclose = function () {
+    console.log("datachannel close");
+  };
+
+  dc1.onerror = function () {
+    console.log("datachannel error");
+  };
+
+  pc1.createOffer(function(offer) {
+    console.info(offer);
+    g_offer = offer;
+    pc1.setLocalDescription(new RTCSessionDescription(offer), function() {
+      //sendNegotiation("offer", offer);
+      console.info(g_offer);
+      $('#offer').val(JSON.stringify(g_offer));
+      var enc_offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
+      //console.info(enc_offer);
+      httpGetJSON(httpServer + '/set_offer.json?offer=' + enc_offer, function(response, status) {
+          if (status === 200) {
+              console.info(response);
+          } else {
+              console.error('offer failed with status: ' + status);
+          }
+      });
+    }, error);
+  }, error, {"offerToReceiveAudio":false, "offerToReceiveVideo":false});
+});
+
+$('#getAnswer').click(function () {
+  var enc_offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
+  httpGetJSON(httpServer + '/get_answer.json?offer=' + enc_offer, function(response, status) {
+      if (status === 200) {
+          //console.info(response);
+          g_answer = JSON.parse(atob(decodeURIComponent(response)));
+          console.info(g_answer);
+          $('#answer').val(JSON.stringify(g_answer));
+      } else {
+          console.error('offer failed .....');
+      }
+  });
+});
+
+$('#getOffer').click(function () {
+  httpGetJSON(httpServer + '/get_offers.json', function(response, status) {
+      if (status === 200) {
+          var offer = response[0];
+          g_offer = JSON.parse(atob(decodeURIComponent(offer)));
+          $('#offer').val(JSON.stringify(g_offer));
+          console.info(g_offer);
+          pc1.setRemoteDescription(new RTCSessionDescription(g_offer), function() {
+            pc1.createAnswer(function(answer) {
+              g_answer = answer;
+              $('#answer').val(JSON.stringify(g_answer));
+              console.info(g_answer);
+              pc1.setLocalDescription(new RTCSessionDescription(answer), function() {
+
+              }, error);
+            }, error);
+          }, error);
+      } else {
+          console.error('offer failed .....');
+      }
+  });
+});
+
+$('#setAnswer').click(function () {
+  console.info(g_answer);
+  console.info(g_offer);
+  var enc_answer = encodeURIComponent(btoa(JSON.stringify(g_answer)));
+  var enc_offer = encodeURIComponent(btoa(JSON.stringify(g_offer)));
+  //console.info(enc_answer);
+  //console.info(enc_offer);
+  httpGetJSON(httpServer + '/set_answer.json?answer=' + enc_answer + '&offer=' + enc_offer, function(response, status) {
+      if (status === 200) {
+          console.info(response);
+      } else {
+          console.error('answer failed .....');
+      }
+  });
+});
+
+/*
 var httpServer = 'http://' + document.URL.split('://')[1].split(':')[0] + ':8888';
 console.info(httpServer);
 var cfg = {'iceServers': [{'url': 'stun:23.21.150.121'}]},
   con = { 'optional': [{'DtlsSrtpKeyAgreement': true}] }
 
-/* THIS IS ALICE, THE CALLER/SENDER */
+// THIS IS ALICE, THE CALLER/SENDER
 
 var pc1 = new RTCPeerConnection(cfg, con),
   dc1 = null, tn1 = null
@@ -92,7 +237,6 @@ $('#offerSentBtn').click(function () {
     httpGetJSON(httpServer + '/get_answer.json?offer=' + offer, function(response, status) {
         if (status === 200) {
             var answer = JSON.parse(atob(decodeURIComponent(response)));
-            g_answer = answer;
             console.info(answer);
             $('#remoteAnswer').val(JSON.stringify(answer));
             $('#answerRecdBtn').attr('disabled', false);
@@ -225,7 +369,11 @@ function createLocalOffer () {
     console.log('adding stream to pc1')
     setupDC1()
     pc1.createOffer(function (desc) {
-      pc1.setLocalDescription(desc, function () {}, function () {})
+      pc1.setLocalDescription(desc, function () {
+        console.log('aaaaaa');
+      }, function () {
+        console.log('bbbbbbb');
+      })
       console.log('created local offer', desc)
     },
     function () { console.warn("Couldn't create offer") },
@@ -301,7 +449,7 @@ function handleCandidateFromPC2 (iceCandidate) {
   pc1.addIceCandidate(iceCandidate)
 }
 
-/* THIS IS BOB, THE ANSWERER/RECEIVER */
+// THIS IS BOB, THE ANSWERER/RECEIVER
 
 var pc2 = new RTCPeerConnection(cfg, con),
   dc2 = null
@@ -382,3 +530,4 @@ function getTimestamp () {
 function writeToChatLog (message, message_type) {
   document.getElementById('chatlog').innerHTML += '<p class="' + message_type + '">' + '[' + getTimestamp() + '] ' + message + '</p>'
 }
+*/
